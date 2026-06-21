@@ -26,7 +26,7 @@
     <p style="margin-bottom:12px; line-height:1.6;"><strong>5. Petunjuk (Hint):</strong> Jika kesulitan pada latihan, tekan tombol "Hint (Petunjuk) 💡".</p>
   </div>
 </div>
-<button class="kamus-float" onclick="openKamus()">📖 Kamus Mini</button>
+
 
 <div id="header" style="justify-content: space-between;">
   <div style="display:flex; align-items:center;">
@@ -36,7 +36,10 @@
       <div class="logo-sub">Paket C – PKBM Tunas Mandiri</div>
     </div>
   </div>
-  <button id="theme-toggle" class="btn btn-outline" style="padding: 8px; border-radius: 50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border: 2px solid var(--border); background: var(--surface); color: var(--text-main);" onclick="toggleTheme()">🌙</button>
+  <div style="display:flex; gap:8px;">
+    <button class="btn btn-outline" style="padding: 8px; border-radius: 50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border: 2px solid var(--border); background: var(--surface); color: var(--text-main);" onclick="openKamus()" title="Kamus Mini">📖</button>
+    <button id="theme-toggle" class="btn btn-outline" style="padding: 8px; border-radius: 50%; width:40px; height:40px; display:flex; align-items:center; justify-content:center; border: 2px solid var(--border); background: var(--surface); color: var(--text-main);" onclick="toggleTheme()">🌙</button>
+  </div>
 </div>
 
 <div id="prog-wrap">

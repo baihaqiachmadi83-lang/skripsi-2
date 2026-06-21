@@ -277,6 +277,75 @@ for (let u = 1; u <= 3; u++) {
           cards: [] 
         }
       });
+    } else if (u === 1 && s === 4) {
+      unit.sessions.push({
+        id: "u1s4", title: "Session 4: Food and Drinks", type: "learning",
+        blocks: [
+          {
+            type: "warmup_blanks",
+            image: "food_drinks_u1s4_1782019845993.png",
+            text_eng: "Look at the table. What food do you see?",
+            text_ind: "Lihat mejanya. Makanan apa yang Anda lihat?",
+            blanks: [
+              { ind: "Nasi", eng: "rice" },
+              { ind: "Air", eng: "water" },
+              { ind: "Daging", eng: "meat" }
+            ]
+          },
+          {
+            type: "flashcards",
+            text_eng: "Vocabulary Presentation: Tap the cards to flip!",
+            text_ind: "Kosakata: Ketuk kartu untuk membalik!",
+            cards: [
+              { ind: "air", eng: "water", phon: "WA-ter", icon: "💧" },
+              { ind: "nasi", eng: "rice", phon: "RAIS", icon: "🍚" },
+              { ind: "daging", eng: "meat", phon: "MIT", icon: "🥩" },
+              { ind: "ikan", eng: "fish", phon: "FISH", icon: "🐟" },
+              { ind: "ayam", eng: "chicken", phon: "CHI-ken", icon: "🍗" },
+              { ind: "sayur", eng: "vegetable", phon: "VEJ-ta-bl", icon: "🥦" },
+              { ind: "buah", eng: "fruit", phon: "FRUT", icon: "🍎" },
+              { ind: "susu", eng: "milk", phon: "MILK", icon: "🥛" }
+            ]
+          }
+        ],
+        exercises: [
+          {
+            type: "word_pic_seq",
+            randomize: true,
+            q_eng: "Which word matches this picture?",
+            q_ind: "Kata mana yang cocok dengan gambar ini?",
+            questions: [
+              { word: "🍚", opts: ["rice", "water", "milk", "meat"], answer: 0 },
+              { word: "💧", opts: ["milk", "water", "fish", "chicken"], answer: 1 },
+              { word: "🥩", opts: ["vegetable", "fruit", "meat", "rice"], answer: 2 },
+              { word: "🐟", opts: ["chicken", "meat", "fish", "water"], answer: 2 },
+              { word: "🍗", opts: ["vegetable", "chicken", "meat", "rice"], answer: 1 },
+              { word: "🥦", opts: ["vegetable", "fruit", "fish", "milk"], answer: 0 },
+              { word: "🍎", opts: ["vegetable", "rice", "meat", "fruit"], answer: 3 },
+              { word: "🥛", opts: ["water", "milk", "rice", "fish"], answer: 1 }
+            ]
+          },
+          {
+            type: "fill_bank",
+            q_eng: "Read the sentences and choose the missing food word from the box.",
+            q_ind: "Baca kalimat-kalimat berikut dan pilih kata makanan yang hilang dari kotak.",
+            words: ["rice", "water", "meat", "chicken", "fruit"],
+            sentences: [
+              { text: "I drink a glass of ___.", answer: "water" },
+              { text: "We eat ___ for dinner.", answer: "rice" },
+              { text: "The cow gives us milk and ___.", answer: "meat" },
+              { text: "Fried ___ is very delicious.", answer: "chicken" },
+              { text: "Apple is my favorite ___.", answer: "fruit" }
+            ]
+          }
+        ],
+        summary: {
+          eng: "Today you learned 8 words about food and drinks!",
+          ind: "Hari ini Anda telah belajar 8 kata tentang makanan dan minuman!",
+          cheat_sheet: true,
+          cards: []
+        }
+      });
     } else if (u === 1 && s === 5) {
       unit.sessions.push({
         id: "u1s5", title: "Session 5: Describing Words (Basic Adjectives)", type: "learning",

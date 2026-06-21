@@ -8,53 +8,181 @@ let csortState = {};
 let speedState = {};
 let vfState = {};
 
-function handleFbank(exIdx, word, btn) {
-  const st = stepMap[currentStep].stepData.exercises[exIdx];
-  const blank = document.getElementById(`fb-${exIdx}`);
-  blank.innerText = word;
-  fbankState[exIdx] = word;
-  btn.parentNode.querySelectorAll('.fill-opt').forEach(b => b.style.opacity = '0.5');
-  btn.style.opacity = '1';
-  document.getElementById(`fbank-check-${exIdx}`).style.display = 'block';
+function speakTTS(text, lang = 'en-US') {
+  if (!('speechSynthesis' in window)) return;
+  window.speechSynthesis.cancel();
+  const utterance = new SpeechSynthesisUtterance(text);
+  utterance.lang = lang;
+  utterance.rate = lang === 'en-US' ? 0.9 : 1.0;
+  window.speechSynthesis.speak(utterance);
 }
 
-function checkFbank(exIdx) {
-  const st = stepMap[currentStep].stepData.exercises[exIdx];
-  const ans = fbankState[exIdx];
-  const correct = (ans === st.sentence.split('___')[0].split(' ').pop() || ans === st.answer);
-  
-  if (correct) {
-    exerciseStatus[exIdx] = true;
-    document.getElementById(`fbank-check-${exIdx}`).innerText = "Correct! ✅";
-    document.getElementById(`fbank-check-${exIdx}`).style.background = "var(--success)";
+function playSound(isCorrect) {
+  if (isCorrect) {
+    speakTTS("Benar sekali bro!", "id-ID");
   } else {
-    document.getElementById(`fbank-check-${exIdx}`).innerText = "Try again! ❌";
-    document.getElementById(`fbank-check-${exIdx}`).style.background = "var(--error)";
+    speakTTS("Maaf belum tepat bro.", "id-ID");
   }
 }
 
-function fbankMulti(exIdx) {
-  const st = stepMap[currentStep].stepData.exercises[exIdx];
+
+
+function selectDnd(exIdx, word) {
+  if (exerciseStatus[exIdx]) return;
+  const st = dndState[exIdx];
+  const btn = document.getElementById(`dnd-w-${exIdx}-${word}`);
+  
+  if (st.selWord !== null && st.selWord !== word) {
+    document.getElementById(`dnd-w-${exIdx}-${st.selWord}`).classList.remove('sel');
+  }
+  
+  if (st.selWord === word) { 
+    st.selWord = null;
+    btn.classList.remove('sel');
+    return; 
+  }
+  
+  st.selWord = word;
+  btn.classList.add('sel');
+}
+
+function placeDnd(exIdx, slotIdx) {
+  if (exerciseStatus[exIdx]) return;
+  const st = dndState[exIdx];
+  const slot = document.getElementById(`dnd-s-${exIdx}-${slotIdx}`);
+  
+  if (st.slots[slotIdx] !== null) {
+    const oldWord = st.slots[slotIdx];
+    document.getElementById(`dnd-w-${exIdx}-${oldWord}`).style.display = 'inline-block';
+    st.slots[slotIdx] = null;
+    slot.innerText = '';
+    slot.classList.remove('filled');
+  }
+  
+  if (st.selWord !== null) {
+    st.slots[slotIdx] = st.selWord;
+    slot.innerText = st.selWord;
+    slot.classList.add('filled');
+    
+    document.getElementById(`dnd-w-${exIdx}-${st.selWord}`).classList.remove('sel');
+    document.getElementById(`dnd-w-${exIdx}-${st.selWord}`).style.display = 'none';
+    st.selWord = null;
+    
+    if (st.slots.every(s => s !== null)) {
+      document.getElementById(`dnd-check-${exIdx}`).style.display = 'block';
+    } else {
+      document.getElementById(`dnd-check-${exIdx}`).style.display = 'none';
+    }
+  }
+}
+
+function checkDnd(exIdx) {
+  const st = dndState[exIdx];
   let correctCount = 0;
-  st.sentences.forEach((s, i) => {
-    if (fbankState[`${exIdx}-${i}`] === s.answer) correctCount++;
+  st.slots.forEach((word, idx) => {
+    const slot = document.getElementById(`dnd-s-${exIdx}-${idx}`);
+    if (word === st.ex.items[idx].answer) {
+      correctCount++;
+      slot.className = 'dnd-slot correct';
+    } else {
+      slot.className = 'dnd-slot wrong';
+    }
+    document.getElementById(`dnd-ans-${exIdx}-${idx}`).style.display = 'block';
   });
+  
+  document.getElementById(`dnd-check-${exIdx}`).style.display = 'none';
+  document.getElementById(`dnd-score-${exIdx}`).innerHTML = `Score: ${correctCount} / ${st.ex.items.length}`;
+  document.getElementById(`dnd-score-${exIdx}`).style.display = 'block';
+  playSound(correctCount === st.ex.items.length);
+  showExFeedback(exIdx, true, correctCount === st.ex.items.length ? 'Sempurna!' : 'Periksa kembali pasangan gambar dan kata.');
+}
+
+function selectFbank(exIdx, word) {
+  if (exerciseStatus[exIdx]) return;
+  const st = fbankState[exIdx];
+  const btn = document.getElementById(`fb-w-${exIdx}-${word}`);
+  
+  if (btn.classList.contains('used')) return;
+  
+  if (st.selWord !== null && st.selWord !== word) {
+    document.getElementById(`fb-w-${exIdx}-${st.selWord}`).classList.remove('sel');
+  }
+  
+  if (st.selWord === word) { 
+    st.selWord = null;
+    btn.classList.remove('sel');
+    return; 
+  }
+  
+  st.selWord = word;
+  btn.classList.add('sel');
+}
+
+function placeFbank(exIdx, slotIdx) {
+  if (exerciseStatus[exIdx]) return;
+  const st = fbankState[exIdx];
+  const slot = document.getElementById(`fb-s-${exIdx}-${slotIdx}`);
+  
+  if (st.slots[slotIdx] !== null) {
+    const oldWord = st.slots[slotIdx];
+    document.getElementById(`fb-w-${exIdx}-${oldWord}`).classList.remove('used');
+    st.slots[slotIdx] = null;
+    slot.innerText = '';
+    slot.style.borderColor = 'var(--accent)';
+  }
+  
+  if (st.selWord !== null) {
+    st.slots[slotIdx] = st.selWord;
+    slot.innerText = st.selWord;
+    
+    const wordBtn = document.getElementById(`fb-w-${exIdx}-${st.selWord}`);
+    wordBtn.classList.remove('sel');
+    wordBtn.classList.add('used');
+    st.selWord = null;
+    
+    if (st.slots.every(s => s !== null)) {
+      document.getElementById(`fbank-check-${exIdx}`).style.display = 'block';
+    } else {
+      document.getElementById(`fbank-check-${exIdx}`).style.display = 'none';
+    }
+  }
+}
+
+function checkFbank(exIdx) {
+  const st = fbankState[exIdx];
+  let correctCount = 0;
+  st.slots.forEach((word, idx) => {
+    const slot = document.getElementById(`fb-s-${exIdx}-${idx}`);
+    if (word === st.ex.sentences[idx].answer) {
+      correctCount++;
+      slot.style.color = 'var(--success)';
+      slot.style.borderColor = 'var(--success)';
+    } else {
+      slot.style.color = 'var(--error)';
+      slot.style.borderColor = 'var(--error)';
+    }
+    document.getElementById(`fbank-ans-${exIdx}-${idx}`).style.display = 'block';
+  });
+  
   document.getElementById(`fbank-check-${exIdx}`).style.display = 'none';
-  document.getElementById(`fbank-score-${exIdx}`).innerHTML = `Score: ${correctCount} out of ${st.sentences.length}`;
+  document.getElementById(`fbank-score-${exIdx}`).innerHTML = `Score: ${correctCount} / ${st.ex.sentences.length}`;
   document.getElementById(`fbank-score-${exIdx}`).style.display = 'block';
-  showExFeedback(exIdx, true, correctCount === st.sentences.length ? 'Sempurna!' : 'Periksa jawaban yang benar.');
+  playSound(correctCount === st.ex.sentences.length);
+  showExFeedback(exIdx, true, correctCount === st.ex.sentences.length ? 'Sempurna!' : 'Periksa kembali jawaban yang benar.');
 }
 
 function showNumDisp(blockIdx, arrIdx) {
   const n = window.curNumData[arrIdx];
   document.getElementById(`ndw-${blockIdx}`).innerText = n.w.toUpperCase();
   document.getElementById(`ndp-${blockIdx}`).innerText = n.p;
+  speakTTS(n.w, 'en-US');
 }
 
 function handleSeq(exIdx, qIdx, optIdx, correctIdx, btn) {
   const st = stepMap[currentStep].stepData.exercises[exIdx];
   const isCorrect = optIdx === correctIdx;
   if (isCorrect) seqState[exIdx].score++;
+  playSound(isCorrect);
   
   btn.style.background = isCorrect ? 'var(--success)' : 'var(--error)';
   
@@ -113,15 +241,34 @@ function renderHome() {
       <button class="btn btn-primary" style="width:100%; justify-content:center; padding:16px; font-size:1.1rem;" onclick="startStep(state.unlockedStep)">START LEARNING</button>
       <button class="btn btn-outline" style="width:100%; justify-content:center; margin-top:10px;" onclick="renderMap()">View Curriculum Map</button>
 
+      <div style="margin-top:32px; text-align:left; background:var(--surface); border:2px solid var(--border); border-radius:var(--r-md); padding:20px;">
+        <h3 style="margin-bottom:12px; color:var(--primary-dark); font-size:1.1rem;">🛠️ Alat & Panduan</h3>
+        <p style="font-size:0.9rem; color:var(--text-sub); margin-bottom:16px;">Gunakan alat bantu di bawah ini untuk mempermudah belajarmu.</p>
+        <div style="display:flex; gap:12px; flex-wrap:wrap;">
+          <button class="btn btn-outline" style="flex:1; justify-content:center; padding:12px;" onclick="openKamus()">📖 Kamus Mini</button>
+          <button class="btn btn-outline" style="flex:1; justify-content:center; padding:12px;" onclick="document.getElementById('guide-modal').style.display='flex'">❓ Cara Penggunaan</button>
+        </div>
+      </div>
+
       <div style="margin-top:20px; font-size:0.85rem; color:var(--text-sub);">
         <div style="font-weight:600;">No account needed. Learn anytime, anywhere.</div>
         <div style="font-style:italic;">Tidak perlu akun. Belajar kapan saja, di mana saja.</div>
+        <div style="margin-top:12px;">
+          <a href="#" onclick="enableDemoMode(); return false;" style="color:var(--primary); text-decoration:underline; font-weight:bold;">✨ Enable Demo Mode (Unlock All)</a>
+        </div>
       </div>
     </div>
   `;
   btnBack.style.visibility = 'hidden';
   btnNext.style.visibility = 'hidden';
   window.scrollTo(0,0);
+}
+
+function enableDemoMode() {
+  state.unlockedStep = 999;
+  saveState();
+  alert("Demo Mode Enabled!\nSemua sesi dan unit sekarang telah terbuka (Unlocked).");
+  renderMap();
 }
 
 function renderMap() {
@@ -208,7 +355,7 @@ function renderCurrentStep() {
           <div class="instr-eng">${blk.text_eng}</div><div class="instr-ind">${blk.text_ind}</div>
           <img src="${blk.image}" class="wu-img">
           <div>
-            ${blk.blanks.map((b,i) => `<div class="wu-item">${b.ind} = <div class="wu-blank" id="wub-${bi}-${i}" onclick="this.innerHTML='${b.eng}'; this.classList.add('revealed')">?</div></div>`).join('')}
+            ${blk.blanks.map((b,i) => `<div class="wu-item">${b.ind} = <div class="wu-blank" id="wub-${bi}-${i}" onclick="this.innerHTML='${b.eng} 🔊'; this.classList.add('revealed'); speakTTS('${b.eng}', 'en-US');">?</div></div>`).join('')}
           </div>
         </div>`;
       } else if (blk.type === 'flashcards') {
@@ -219,7 +366,7 @@ function renderCurrentStep() {
               <div class="fc" onclick="this.classList.toggle('flipped')">
                 <div class="fc-inner">
                   <div class="fc-front"><div class="fc-icon">${c.icon}</div><div class="fc-text">${c.ind}</div></div>
-                  <div class="fc-back"><div class="fc-text">${c.eng}</div><div class="fc-phon">${c.phon}</div></div>
+                  <div class="fc-back"><div class="fc-text" onclick="event.stopPropagation(); speakTTS('${c.eng}', 'en-US')">${c.eng} 🔊</div><div class="fc-phon">${c.phon}</div></div>
                 </div>
               </div>
             `).join('')}
@@ -602,6 +749,7 @@ function tapMem(exIdx, ci) {
     const c1 = st.cards[st.open[0]];
     const c2 = st.cards[st.open[1]];
     if (c1.id === c2.id) {
+      playSound(true);
       setTimeout(() => {
         document.getElementById(`mem-c-${exIdx}-${st.open[0]}`).classList.add('matched');
         document.getElementById(`mem-c-${exIdx}-${st.open[1]}`).classList.add('matched');
@@ -615,6 +763,7 @@ function tapMem(exIdx, ci) {
         }
       }, 500);
     } else {
+      playSound(false);
       setTimeout(() => {
         document.getElementById(`mem-c-${exIdx}-${st.open[0]}`).classList.remove('flipped');
         document.getElementById(`mem-c-${exIdx}-${st.open[1]}`).classList.remove('flipped');
@@ -678,6 +827,7 @@ function checkCsort(exIdx) {
   document.getElementById(`csort-check-${exIdx}`).style.display = 'none';
   document.getElementById(`csort-score-${exIdx}`).innerHTML = `Score: ${correctCount} / ${st.max}`;
   document.getElementById(`csort-score-${exIdx}`).style.display = 'block';
+  playSound(correctCount === st.max);
   showExFeedback(exIdx, true, correctCount === st.max ? 'Sempurna!' : 'Periksa kembali kategorinya.');
 }
 
@@ -689,9 +839,11 @@ function handleStoryMcq(exIdx, qIdx, optIdx, correctIdx, btn) {
   
   if (optIdx === correctIdx) {
     btn.classList.add('correct');
+    playSound(true);
     st.score++;
   } else {
     btn.classList.add('wrong');
+    playSound(false);
     container.children[correctIdx].classList.add('correct');
   }
   
@@ -765,10 +917,12 @@ function handleSpeed(exIdx, optIdx, answer, btn) {
   
   if (optIdx === answer) {
     btn.classList.add('correct');
+    playSound(true);
     st.score++;
     fill.style.background = 'var(--success)';
   } else {
     btn.classList.add('wrong');
+    playSound(false);
     container.children[answer].classList.add('correct');
     fill.style.background = 'var(--error)';
   }
@@ -782,6 +936,8 @@ function tapVf(exIdx, el) {
   if (el.classList.contains('found')) return;
   
   el.classList.add('found');
+  playSound(true);
+  speakTTS(el.innerText, 'en-US');
   st.found++;
   document.getElementById(`vf-count-${exIdx}`).innerText = st.found;
   
@@ -896,10 +1052,12 @@ function handleMCQ(exIdx, optIdx, btn) {
     btn.classList.add('correct');
     exerciseScore[exIdx] = 1;
     exerciseStatus[exIdx] = true;
+    playSound(true);
     Array.from(container.children).forEach(b => b.disabled = true);
     if (!isQuiz) showExFeedback(exIdx, true, ex.exp_ind);
   } else {
     btn.classList.add('wrong');
+    playSound(false);
     if (isQuiz) {
       container.children[ex.answer].classList.add('correct');
       exerciseScore[exIdx] = 0;
@@ -953,6 +1111,7 @@ function renderSbAns(exIdx, sentIdx) {
   const targetWords = ex.sentences[sentIdx].answer;
   if (words.length === targetWords.length) {
     const isCorrect = JSON.stringify(words) === JSON.stringify(targetWords);
+    playSound(isCorrect);
     if (isCorrect) {
       ansDiv.style.borderColor = 'var(--success)';
       ansDiv.style.background = 'var(--success-bg)';
@@ -1304,7 +1463,7 @@ function searchKamus() {
   list.innerHTML = filtered.length > 0 ? filtered.map(c => `
     <div style="padding:12px; background:var(--bg); border:1px solid var(--border); border-radius:var(--r-sm); display:flex; justify-content:space-between; align-items:center;">
       <div>
-        <div style="font-weight:bold; color:var(--primary-dark);">${c.eng}</div>
+        <div style="font-weight:bold; color:var(--primary-dark); cursor:pointer;" onclick="speakTTS('${c.eng}', 'en-US')">${c.eng} 🔊</div>
         <div style="font-size:0.85rem; color:var(--text-sub); font-style:italic;">${c.ind}</div>
       </div>
       <div style="font-size:1.5rem;">${c.icon||'💬'}</div>
@@ -1370,3 +1529,53 @@ document.getElementById('theme-toggle').innerText = savedTheme === 'dark' ? '☀
 
 // Init
 renderHome();
+
+// 4D Image Effect Observer
+const imgObserver = new MutationObserver(() => {
+  const images = document.querySelectorAll('#app img:not(.logo-icon):not(.tilt-applied)');
+  images.forEach(img => {
+    img.classList.add('tilt-applied');
+    img.style.transition = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s';
+    img.style.transformStyle = 'preserve-3d';
+    
+    // Base style for all images except the specialized hero image
+    if (!img.classList.contains('hero-graphic-4d')) {
+      img.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)';
+    }
+    
+    img.addEventListener('mousemove', (e) => {
+      const rect = img.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+      
+      const xPct = (x / rect.width) - 0.5;
+      const yPct = (y / rect.height) - 0.5;
+      
+      // Calculate rotation based on cursor position
+      const rotX = yPct * -25; 
+      const rotY = xPct * 25;
+      
+      img.style.transform = `perspective(1000px) rotateX(${rotX}deg) rotateY(${rotY}deg) scale3d(1.05, 1.05, 1.05)`;
+      
+      if (!img.classList.contains('hero-graphic-4d')) {
+        img.style.boxShadow = `${-xPct * 30}px ${-yPct * 30}px 30px rgba(0,0,0,0.4)`;
+      }
+    });
+    
+    img.addEventListener('mouseleave', () => {
+      img.style.transition = 'transform 0.5s ease-out, box-shadow 0.5s ease-out';
+      img.style.transform = 'perspective(1000px) rotateX(0) rotateY(0) scale3d(1, 1, 1)';
+      
+      if (!img.classList.contains('hero-graphic-4d')) {
+        img.style.boxShadow = '0 10px 20px rgba(0,0,0,0.15)';
+      }
+      
+      setTimeout(() => {
+        img.style.transition = 'transform 0.2s cubic-bezier(0.25, 0.46, 0.45, 0.94), box-shadow 0.2s';
+      }, 500);
+    });
+  });
+});
+if (document.getElementById('app')) {
+  imgObserver.observe(document.getElementById('app'), { childList: true, subtree: true });
+}
